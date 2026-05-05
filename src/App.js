@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+﻿import { useState, useEffect, useRef, useCallback } from "react";
 const MODES={HEALTH:"health",RELIGIOUS:"religious"};
 const TABS={HOME:"home",HISTORY:"history",SETTINGS:"settings",PROFILE:"profile"};
 const IF_PRESETS=[{label:"16:8",fast:16,eat:8},{label:"18:6",fast:18,eat:6},{label:"20:4",fast:20,eat:4},{label:"OMAD",fast:23,eat:1}];
@@ -173,7 +173,7 @@ function Settings({mode,setMode,preset,setPreset,autoFast,setAutoFast,switchMode
   </div>);}
 function Sec({title,children}){return(<div style={{marginBottom:20}}><div style={{fontSize:12,color:"#555",fontWeight:600,letterSpacing:0.8,textTransform:"uppercase",marginBottom:8}}>{title}</div><div style={{background:"rgba(255,255,255,0.04)",border:"1px solid rgba(255,255,255,0.07)",borderRadius:16,overflow:"hidden"}}>{children}</div></div>);}
 function Row({label,right}){return(<div style={{padding:"14px 16px",display:"flex",alignItems:"center",justifyContent:"space-between",borderBottom:"1px solid rgba(255,255,255,0.05)"}}><span style={{fontSize:14,color:"#ddd"}}>{label}</span>{right}</div>);}
-function Radio({checked,onClick}){return(<div onClick={onClick} style={{width:22,height:22,borderRadius:11,border:"2px solid "+(checked?"#60A5FA":"#444"),background:checked?"#60A5FA":"transparent",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>{checked&&<span style={{color:"#000",fontSize:11,fontWeight:800}}>✓</span>}</div>);}
+function Radio({checked,onClick}){return(<div onClick={onClick} style={{width:22,height:22,borderRadius:11,border:"2px solid "+(checked?"#60A5FA":"#444"),background:checked?"#60A5FA":"transparent",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>{checked&&<span style={{color:"#000",fontSize:11,fontWeight:800}}>âœ“</span>}</div>);}
 function Profile({history}){
   const done=history.filter(h=>h.done);const total=done.reduce((a,h)=>a+h.hours,0);
   return(<div style={{padding:"20px 24px 0"}}><h2 style={{margin:"0 0 4px",fontSize:22,fontWeight:800}}>Profile</h2><p style={{margin:"0 0 20px",fontSize:13,color:"#555"}}>Your fasting journey</p>
@@ -182,3 +182,4 @@ function Profile({history}){
     <Sec title="Achievements">{[{l:"First Fast",done:true},{l:"3-Day Streak",done:true},{l:"7-Day Streak",done:false},{l:"24-Hour Fast",done:false}].map(a=><Row key={a.l} label={<span style={{opacity:a.done?1:0.4}}>{a.l}</span>} right={<span style={{fontSize:14}}>{a.done?"Done":"Locked"}</span>}/>)}</Sec>
   </div>);}
 function TBar({tab,setTab}){return(<div style={{position:"absolute",bottom:0,left:0,right:0,background:"rgba(9,9,15,0.95)",backdropFilter:"blur(30px)",borderTop:"1px solid rgba(255,255,255,0.06)",display:"flex",justifyContent:"space-around",padding:"10px 0 24px"}}>{[{id:TABS.HOME,l:"Home"},{id:TABS.HISTORY,l:"History"},{id:TABS.SETTINGS,l:"Settings"},{id:TABS.PROFILE,l:"Profile"}].map(t=><button key={t.id} onClick={()=>setTab(t.id)} style={{background:"none",border:"none",color:tab===t.id?"#60A5FA":"#444",display:"flex",flexDirection:"column",alignItems:"center",gap:3,fontSize:10,fontWeight:600,cursor:"pointer",padding:"4px 16px",transition:"color 0.2s"}}>{t.l}</button>)}</div>);}
+
