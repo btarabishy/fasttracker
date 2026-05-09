@@ -1,0 +1,76 @@
+
+
+  const[autoFast,setAutoFast]=useState(false);
+  const[isPro,setIsPro]=useState(false);
+  const timerRef=useRef();
+  const prevEl=useRef(0);
+  const autoRef=useRef();
+  useEffect(()=>{initAdMob();},[]);
+  useEffect(()=>{if(screen==="main")showBanner(isPro);else hideBanner();},[screen,isPro]);
+  const fetchPrayerTimes=useCallback(()=>{
+    setPrayer(p=>({...p,loading:true,error:null}));
+    if(!navigator.geolocation){setPrayer(p=>({...p,loading:false,error:"Geolocation not supported"}));return;}
+    navigator.geolocation.getCurrentPosition(async pos=>{
+      try{
+        const{latitude:lat,longitude:lng}=pos.coords;
+        const today=new Date();
+        const dateStr=today.getDate()+"-"+(today.getMonth()+1)+"-"+today.getFullYear();
+        const res=await fetch("https://api.aladhan.com/v1/timings/"+dateStr+"?latitude="+lat+"&longitude="+lng+"&method=2");
+        const data=await res.json();
+        if(data.code===200){
+          const timings=data.data.timings;
+          const meta=data.data.meta;
+          const parseT=(str)=>{const[h,m]=str.split(":").map(Number);const d=new Date();d.setHours(h,m,0,0);return d;};
+          const fajrDate=parseT(timings.Fajr);
+          const maghribDate=parseT(timings.Maghrib);
+          const totalSec=Math.max(1,Math.floor((maghribDate-fajrDate)/1000));
+          setPrayer({fajr:fajrDate,maghrib:maghribDate,totalSec,loading:false,error:null,city:meta.timezone||""});
+          flash("Prayer times loaded!");
+        }else{throw new Error("API error");}
+      }catch(e){setPrayer(p=>({...p,loading:false,error:"Could not load prayer times"}));}
+    },()=>{setPrayer(p=>({...p,loading:false,error:"Location access denied"}));});
+  },[]);
+  useEffect(()=>{if(mode===MODES.RELIGIOUS)fetchPrayerTimes();},[mode]);
+  useEffect(()=>{
+    if(!autoFast||mode!==MODES.RELIGIOUS||!prayer.fajr||!prayer.maghrib)return;
+    clearInterval(autoRef.current);
+    autoRef.current=setInterval(()=>{
+      const now=Date.now();
+      const fajrMs=prayer.fajr.getTime();
+      const maghribMs=prayer.maghrib.getTime();
+      if(now>=fajrMs&&now<maghribMs&&!fasting){setStartMs(fajrMs);setElapsed(Math.floor((now-fajrMs)/1000));setFasting(true);flash("Auto-fast started at Fajr");}
+      if(now>=maghribMs&&fasting){const hrs=Math.floor((maghribMs-fajrMs)/1000);setHistory(h=>[{id:Date.now(),date:new Date().toLocaleDateString("en-US",{month:"short",day:"numeric",year:"numeric"}),hours:+(hrs/3600).toFixed(1),type:"Religious",done:true},...h]);setFasting(false);setElapsed(0);flash("Auto-fast ended at Maghrib!");}
+    },5000);
+    return()=>clearInterval(autoRef.current);
+  },[autoFast,mode,prayer,fasting]);
+  useEffect(()=>{if(fasting){timerRef.current=setInterval(()=>setElapsed(Math.floor((Date.now()-startMs)/1000)),1000);}else clearInterval(timerRef.current);return()=>clearInterval(timerRef.current);},[fasting,startMs]);
+  useEffect(()=>{if(!fasting)return;const tot=mode===MODES.RELIGIOUS?prayer.totalSec:preset.fast*3600;if(elapsed===Math.floor(tot/2)&&prevEl.current<Math.floor(tot/2))flash("Halfway there!");if(elapsed>=tot&&prevEl.current<tot)flash("Fast complete!");prevEl.current=elapsed;},[elapsed]);
+  function flash(m){setToast(m);setTimeout(()=>setToast(null),3500);}
+  function startFast(){setStartMs(Date.now());setElapsed(0);setFasting(true);flash("Fast started!");}
+  async function endFast(){if(!fasting)return;const hrs=+(elapsed/3600).toFixed(1);setHistory(h=>[{id:Date.now(),date:new Date().toLocaleDateString("en-US",{month:"short",day:"numeric",year:"numeric"}),hours:hrs,type:mode===MODES.HEALTH?"Health":"Religious",done:hrs>=(mode===MODES.HEALTH?preset.fast:prayer.totalSec/3600)},...h]);setFasting(false);setElapsed(0);flash("Saved "+hrs+"h!");await showInterstitial(isPro);}
+  function switchMode(){setFasting(false);setElapsed(0);clearInterval(timerRef.current);clearInterval(autoRef.current);setAutoFast(false);setScreen("onboard");}
+  const prayerFajr=prayer.fajr||new Date(new Date().setHours(5,12,0,0));
+  const prayerMaghrib=prayer.maghrib||new Date(new Date().setHours(19,47,0,0));
+  const totalSec=mode===MODES.RELIGIOUS?prayer.totalSec:preset.fast*3600;
+  const remaining=Math.max(0,totalSec-elapsed);
+  const progress=Math.min(1,elapsed/totalSec);
+  const stage=getStage(elapsed/3600);
+  const ringColor=fasting?stage.color:"#3A3A4A";
+  const R=80,CIR=2*Math.PI*R,drawn=CIR*progress;
+  const phone={width:390,minHeight:844,margin:"0 auto",background:"#09090F",fontFamily:"-apple-system,BlinkMacSystemFont,sans-serif",color:"#fff",position:"relative",overflow:"hidden",borderRadius:52,boxShadow:"0 40px 100px rgba(0,0,0,0.8)",display:"flex",flexDirection:"column"};
+  if(screen==="onboard")return(<div style={phone}><SBar/><Onboard onSelect={m=>{setMode(m);setScreen("main");}}/></div>);
+  return(<div style={phone}>
+    <SBar/>
+    {toast&&<Toast msg={toast}/>}
+    <div style={{flex:1,overflowY:"auto",paddingBottom:isPro?88:138}}>
+      {tab===TABS.HOME&&<Home mode={mode} fasting={fasting} elapsed={elapsed} remaining={remaining} progress={progress} preset={preset} setPreset={setPreset} stage={stage} ringColor={ringColor} R={R} CIR={CIR} drawn={drawn} startFast={startFast} endFast={endFast} prayer={prayer} prayerFajr={prayerFajr} prayerMaghrib={prayerMaghrib} fmt={fmt} fmtS={fmtS} toHHMM={toHHMM} switchMode={switchMode} autoFast={autoFast} setAutoFast={setAutoFast} fetchPrayerTimes={fetchPrayerTimes} isPro={isPro}/>}
+      {tab===TABS.HISTORY&&<History history={history}/>}
+      {tab===TABS.SETTINGS&&<Settings mode={mode} setMode={setMode} preset={preset} setPreset={setPreset} autoFast={autoFast} setAutoFast={setAutoFast} switchMode={switchMode} fetchPrayerTimes={fetchPrayerTimes} prayer={prayer} isPro={isPro} setIsPro={setIsPro}/>}
+      {tab===TABS.PROFILE&&<Profile history={history} isPro={isPro} setIsPro={setIsPro}/>}
+    </div>
+    {!isPro&&<div style={{position:"absolute",bottom:88,left:0,right:0,height:50,background:"rgba(9,9,15,0.95)",display:"flex",alignItems:"center",justifyContent:"center",borderTop:"1px solid rgba(255,255,255,0.06)"}}><span style={{fontSize:11,color:"#555"}}>Ad space — upgrade to Pro to remove ads</span></div>}
+    <TBar tab={tab} setTab={setTab}/>
+  </div>);}
+function SBar(){return(<div style={{padding:"14px 28px 0",display:"flex",justifyContent:"space-between",alignItems:"center",fontSize:13,fontWeight:600,flexShrink:0}}><span>9:41</span><div style={{width:126,height:34,background:"#09090F",borderRadius:20,border:"1.5px solid #1e1e2a",display:"flex",alignItems:"center",justifyContent:"center"}}><div style={{width:68,height:5,background:"#1a1a2a",borderRadius:4}}/></div><span style={{fontSize:11}}>Battery</span></div>);}
+function Toast({msg}){return(<div style={{position:"absolute",top:64,left:20,right:20,zIndex:99,background:"rgba(255,255,255,0.12)",backdropFilter:"blur(24px)",borderRadius:16,padding:"13px 18px",fontSize:14,fontWeight:500,border:"1px solid rgba(255,255,255,0.18)",textAlign:"center",color:"#fff"}}>{msg}</div>);}
+function Onboard({onSelect}){return(<div style={{flex:1,display:"flex",flexDirection:"column",padding:"32px 

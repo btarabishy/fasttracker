@@ -1,0 +1,11 @@
+{
+  "appId": "com.truvistawellness.fasttracker",
+  "appName": "FastTracker",
+  "webDir": "build",
+  "plugins": {
+    "AdMob": {
+      "appId": "ca-app-pub-7547768976377458~1430183075",
+      "isTesting": false
+    }
+  }
+}
