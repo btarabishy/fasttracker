@@ -49,5 +49,7 @@
 	</array>
 	<key>UIViewControllerBasedStatusBarAppearance</key>
 	<true/>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>TruFast Tracker uses your location to calculate accurate Fajr and Maghrib prayer times.</string>
 </dict>
 </plist>
